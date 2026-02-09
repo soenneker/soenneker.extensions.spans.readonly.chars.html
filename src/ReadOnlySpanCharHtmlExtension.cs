@@ -89,4 +89,50 @@ public static class ReadOnlySpanCharHtmlExtension
 
         return false;
     }
+
+    /// <summary>
+    /// Finds the index of the first occurrence of the character 'c' or 'C' in the specified span, starting the search
+    /// from the given index.
+    /// </summary>
+    /// <remarks>This method performs a case-sensitive search for the character 'c' or 'C'. If the start index
+    /// is out of range, the method will return -1.</remarks>
+    /// <param name="span">The span of characters to search within. This parameter cannot be empty.</param>
+    /// <param name="start">The zero-based index from which to start the search. Must be less than the length of the span.</param>
+    /// <returns>The zero-based index of the first occurrence of 'c' or 'C' if found; otherwise, -1 if the character is not
+    /// found.</returns>
+    [Pure, MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static int IndexOfClassStart(this ReadOnlySpan<char> span, int start)
+    {
+        for (int j = start; j < span.Length; j++)
+        {
+            char ch = span[j];
+            if (ch is 'c' or 'C')
+                return j;
+        }
+        return -1;
+    }
+
+    /// <summary>
+    /// Determines whether the characters at the specified index within the span represent the keyword 'class', using a
+    /// case-insensitive comparison.
+    /// </summary>
+    /// <remarks>The comparison is performed in a case-insensitive manner. The method returns false if the
+    /// index plus the length of the keyword exceeds the span's length.</remarks>
+    /// <param name="span">The span of characters to examine. Must not be empty.</param>
+    /// <param name="idx">The zero-based index in the span at which to check for the keyword 'class'. Must be within the bounds of the
+    /// span; otherwise, the method returns false.</param>
+    /// <returns>true if the characters at the specified index match the keyword 'class' (case-insensitive); otherwise, false.</returns>
+    [Pure, MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool IsClassKeywordAt(this ReadOnlySpan<char> span, int idx)
+    {
+        if ((uint)(idx + 4) >= (uint)span.Length)
+            return false;
+
+        // case-insensitive "class"
+        return span[idx + 0].ToLowerAscii() == 'c'
+               && span[idx + 1].ToLowerAscii() == 'l'
+               && span[idx + 2].ToLowerAscii() == 'a'
+               && span[idx + 3].ToLowerAscii() == 's'
+               && span[idx + 4].ToLowerAscii() == 's';
+    }
 }

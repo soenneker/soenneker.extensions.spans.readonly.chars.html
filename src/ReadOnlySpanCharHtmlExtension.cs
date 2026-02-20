@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using Soenneker.Extensions.Char;
+using Soenneker.Extensions.Spans.Readonly.Chars;
 
 namespace Soenneker.Extensions.Spans.ReadOnly.Chars.Html;
 
@@ -10,6 +11,7 @@ namespace Soenneker.Extensions.Spans.ReadOnly.Chars.Html;
 /// </summary>
 public static class ReadOnlySpanCharHtmlExtension
 {
+
     /// <summary>
     /// Determines whether the specified character span appears to contain valid HTML-like content.
     /// </summary>
@@ -30,15 +32,14 @@ public static class ReadOnlySpanCharHtmlExtension
 
         char next = s[lt + 1];
 
-        // Likely not HTML if "< " etc.
-        if (next == ' ' || next == '\t' || next == '\r' || next == '\n')
+        if (next.IsAsciiWhiteSpace())
             return false;
 
         // Accept: <a, </a, <!doctype, <!--
         if (!(next.IsAsciiLetter() || next == '/' || next == '!'))
             return false;
 
-        int gt = s.Slice(lt + 2).IndexOf('>');
+        int gt = s[(lt + 2)..].IndexOf('>');
         return gt >= 0;
     }
 
@@ -54,40 +55,53 @@ public static class ReadOnlySpanCharHtmlExtension
     [Pure]
     public static bool ContainsOpenTag(this ReadOnlySpan<char> html, ReadOnlySpan<char> tagName)
     {
-        // Case-insensitive search for "<tag" with a boundary check so "div" doesn't match "<divvy".
-        // Boundary after tagName must be one of: whitespace, '>', '/', or end.
-        if (tagName.IsEmpty)
+        if (tagName.IsEmpty || html.IsEmpty)
             return false;
 
-        for (int i = 0; i < html.Length; i++)
+        bool tagAscii = tagName.IsAscii();
+        int len = tagName.Length;
+
+        int i = 0;
+        while (true)
         {
-            if (html[i] != '<')
+            int lt = html.Slice(i).IndexOf('<');
+            if (lt < 0)
+                return false;
+
+            i += lt + 1;
+            if ((uint)i >= (uint)html.Length)
+                return false;
+
+            if (html[i] == '/')
                 continue;
 
-            int start = i + 1;
-            if (start >= html.Length)
+            if ((uint)(i + len) > (uint)html.Length)
                 continue;
 
-            // Skip closing tags: </tag
-            if (html[start] == '/')
+            var candidate = html.Slice(i, len);
+
+            bool match;
+            if (tagAscii)
+            {
+                // only run ASCII path if candidate is ASCII too
+                match = candidate.IsAscii() && candidate.EqualsAsciiIgnoreCase_AssumeAscii(tagName);
+            }
+            else
+            {
+                match = candidate.Equals(tagName, StringComparison.OrdinalIgnoreCase);
+            }
+
+            if (!match)
                 continue;
 
-            if (start + tagName.Length > html.Length)
-                continue;
-
-            if (!html.Slice(start, tagName.Length).Equals(tagName, StringComparison.OrdinalIgnoreCase))
-                continue;
-
-            int end = start + tagName.Length;
+            int end = i + len;
             if (end == html.Length)
                 return true;
 
             char boundary = html[end];
-            if (boundary == '>' || boundary == '/' || boundary == ' ' || boundary == '\t' || boundary == '\r' || boundary == '\n')
+            if (boundary is '>' or '/' or ' ' or '\t' or '\r' or '\n')
                 return true;
         }
-
-        return false;
     }
 
     /// <summary>
@@ -103,13 +117,11 @@ public static class ReadOnlySpanCharHtmlExtension
     [Pure, MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int IndexOfClassStart(this ReadOnlySpan<char> span, int start)
     {
-        for (int j = start; j < span.Length; j++)
-        {
-            char ch = span[j];
-            if (ch is 'c' or 'C')
-                return j;
-        }
-        return -1;
+        if ((uint)start >= (uint)span.Length)
+            return -1;
+
+        int idx = span.Slice(start).IndexOfAny('c', 'C');
+        return idx < 0 ? -1 : start + idx;
     }
 
     /// <summary>
@@ -125,14 +137,17 @@ public static class ReadOnlySpanCharHtmlExtension
     [Pure, MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsClassKeywordAt(this ReadOnlySpan<char> span, int idx)
     {
-        if ((uint)(idx + 4) >= (uint)span.Length)
+        if ((uint)idx > (uint)span.Length)
             return false;
 
-        // case-insensitive "class"
-        return span[idx + 0].ToAsciiLower() == 'c'
-               && span[idx + 1].ToAsciiLower() == 'l'
-               && span[idx + 2].ToAsciiLower() == 'a'
-               && span[idx + 3].ToAsciiLower() == 's'
-               && span[idx + 4].ToAsciiLower() == 's';
+        if ((uint)(idx + 5) > (uint)span.Length)
+            return false;
+
+        // ASCII case-fold via | 0x20
+        return (span[idx + 0] | 0x20u) == 'c'
+               && (span[idx + 1] | 0x20u) == 'l'
+               && (span[idx + 2] | 0x20u) == 'a'
+               && (span[idx + 3] | 0x20u) == 's'
+               && (span[idx + 4] | 0x20u) == 's';
     }
 }

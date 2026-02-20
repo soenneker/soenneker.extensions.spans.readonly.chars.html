@@ -129,10 +129,10 @@ public static class ReadOnlySpanCharHtmlExtension
             return false;
 
         // case-insensitive "class"
-        return span[idx + 0].ToLowerAscii() == 'c'
-               && span[idx + 1].ToLowerAscii() == 'l'
-               && span[idx + 2].ToLowerAscii() == 'a'
-               && span[idx + 3].ToLowerAscii() == 's'
-               && span[idx + 4].ToLowerAscii() == 's';
+        return span[idx + 0].ToAsciiLower() == 'c'
+               && span[idx + 1].ToAsciiLower() == 'l'
+               && span[idx + 2].ToAsciiLower() == 'a'
+               && span[idx + 3].ToAsciiLower() == 's'
+               && span[idx + 4].ToAsciiLower() == 's';
     }
 }

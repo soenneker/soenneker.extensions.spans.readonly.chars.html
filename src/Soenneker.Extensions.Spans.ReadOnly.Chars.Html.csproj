@@ -43,6 +43,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="Soenneker.Extensions.Spans.Readonly.Chars" Version="4.0.50" />
+      <PackageReference Include="Soenneker.Extensions.Spans.Readonly.Chars" Version="4.0.51" />
     </ItemGroup>
 </Project>

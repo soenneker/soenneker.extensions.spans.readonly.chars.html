@@ -1,4 +1,5 @@
 using System;
+using System.Buffers;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using Soenneker.Extensions.Char;
@@ -11,6 +12,7 @@ namespace Soenneker.Extensions.Spans.ReadOnly.Chars.Html;
 /// </summary>
 public static class ReadOnlySpanCharHtmlExtension
 {
+    private static readonly SearchValues<char> HtmlTagStartChars = SearchValues.Create("/!");
 
     /// <summary>
     /// Determines whether the specified character span appears to contain valid HTML-like content.
@@ -36,7 +38,7 @@ public static class ReadOnlySpanCharHtmlExtension
             return false;
 
         // Accept: <a, </a, <!doctype, <!--
-        if (!(next.IsAsciiLetter() || next == '/' || next == '!'))
+        if (!(next.IsAsciiLetter() || HtmlTagStartChars.Contains(next)))
             return false;
 
         int gt = s[(lt + 2)..].IndexOf('>');

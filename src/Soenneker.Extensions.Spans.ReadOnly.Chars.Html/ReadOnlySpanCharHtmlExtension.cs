@@ -17,8 +17,8 @@ public static class ReadOnlySpanCharHtmlExtension
     /// <summary>
     /// Determines whether the specified character span appears to contain valid HTML-like content.
     /// </summary>
-    /// <remarks>The method checks for a '<' character followed by a valid HTML tag indicator (such as a
-    /// letter, '/', or '!'). It returns false for malformed tags or if whitespace immediately follows the '<'
+    /// <remarks>The method checks for a <c>&lt;</c> character followed by a valid HTML tag indicator (such as a
+    /// letter, <c>/</c>, or <c>!</c>). It returns false for malformed tags or if whitespace immediately follows the <c>&lt;</c>
     /// character.</remarks>
     /// <param name="s">The character span to evaluate for the presence of an HTML-like tag structure.</param>
     /// <returns>true if the character span contains a valid HTML-like tag; otherwise, false.</returns>
@@ -49,7 +49,7 @@ public static class ReadOnlySpanCharHtmlExtension
     /// Determines whether the specified HTML content contains an open tag with the given tag name.
     /// </summary>
     /// <remarks>The search is case-insensitive and matches only valid open tags. An open tag is defined as a
-    /// '<' character immediately followed by the tag name and a valid boundary character, such as whitespace, '>', '/',
+    /// <c>&lt;</c> character immediately followed by the tag name and a valid boundary character, such as whitespace, <c>&gt;</c>, <c>/</c>,
     /// or the end of the content. This method does not match closing tags or partial tag names.</remarks>
     /// <param name="html">The HTML content to search for an open tag. This span must not be empty.</param>
     /// <param name="tagName">The name of the tag to search for. This span must not be empty and is compared case-insensitively.</param>

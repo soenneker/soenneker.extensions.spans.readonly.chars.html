@@ -4,7 +4,7 @@
 [![](https://img.shields.io/github/actions/workflow/status/soenneker/soenneker.extensions.spans.readonly.chars.html/codeql.yml?label=CodeQL&style=for-the-badge)](https://github.com/soenneker/soenneker.extensions.spans.readonly.chars.html/actions/workflows/codeql.yml)
 
 # ![](https://user-images.githubusercontent.com/4441470/224455560-91ed3ee7-f510-4041-a8d2-3fc093025112.png) Soenneker.Extensions.Spans.ReadOnly.Chars.Html
-A collection of helpful ReadOnlySpan (char) html-related extension methods.
+Allocation-free HTML sniffing and tag-search helpers for `ReadOnlySpan<char>`.
 
 ## Installation
 
@@ -12,18 +12,40 @@ A collection of helpful ReadOnlySpan (char) html-related extension methods.
 dotnet add package Soenneker.Extensions.Spans.ReadOnly.Chars.Html
 ```
 
-## Quick start
+## Detect HTML-like text
 
 ```csharp
 using Soenneker.Extensions.Spans.ReadOnly.Chars.Html;
 
-// Given an existing ReadOnlySpan<char> named s:
-var result = s.LooksLikeHtml();
+ReadOnlySpan<char> input = "prefix <article>content</article>";
+bool looksLikeHtml = input.LooksLikeHtml();
 ```
 
-## Common operations
+`LooksLikeHtml()` searches for a bracketed sequence beginning with an ASCII letter, `/`, or `!`. It is a fast heuristic: it does not parse HTML, validate nesting, or sanitize content.
 
-- `LooksLikeHtml()` - Determines whether the specified character span appears to contain valid HTML-like content.
-- `ContainsOpenTag()` - Determines whether the specified HTML content contains an open tag with the given tag name. The search is case-insensitive and matches only valid open tags.
-- `IndexOfClassStart()` - Finds the index of the first occurrence of the character 'c' or 'C' in the specified span, starting the search from the given index. Returns the zero-based index of the first occurrence of 'c' or 'C' if found; otherwise, -1 if the character is not found. This method performs a case-sensitive search for the character 'c' or 'C'.
-- `IsClassKeywordAt()` - Determines whether the characters at the specified index within the span represent the keyword 'class', using a case-insensitive comparison. The comparison is performed in a case-insensitive manner.
+## Find an opening tag
+
+```csharp
+ReadOnlySpan<char> html = "<DIV class=\"notice\">Hello</DIV>";
+bool containsDiv = html.ContainsOpenTag("div");
+```
+
+`ContainsOpenTag()` compares the tag name case-insensitively, rejects closing tags, and requires the name to be followed by whitespace, `>`, `/`, or the end of the input. It does not understand comments, scripts, quoted markup, or malformed documents, so use an HTML parser when correctness or security depends on document structure.
+
+## Scan for a class attribute
+
+```csharp
+int index = html.IndexOfClassStart(0);
+while (index >= 0)
+{
+    if (html.IsClassKeywordAt(index))
+    {
+        // Inspect boundaries and the following '=' as required by your parser.
+        break;
+    }
+
+    index = html.IndexOfClassStart(index + 1);
+}
+```
+
+These two methods are lexical building blocks only: `IndexOfClassStart()` finds any `c`/`C`, and `IsClassKeywordAt()` checks the next five characters without validating attribute-name boundaries.

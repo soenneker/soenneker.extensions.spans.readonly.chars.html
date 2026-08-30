@@ -25,24 +25,29 @@ public static class ReadOnlySpanCharHtmlExtension
     [Pure, MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool LooksLikeHtml(this ReadOnlySpan<char> s)
     {
-        int lt = s.IndexOf('<');
-        if (lt < 0)
-            return false;
+        var searchFrom = 0;
 
-        if ((uint)(lt + 1) >= (uint)s.Length)
-            return false;
+        while (searchFrom < s.Length)
+        {
+            int relativeLt = s[searchFrom..].IndexOf('<');
+            if (relativeLt < 0)
+                return false;
 
-        char next = s[lt + 1];
+            int lt = searchFrom + relativeLt;
+            int contentStart = lt + 1;
+            if (contentStart >= s.Length)
+                return false;
 
-        if (next.IsAsciiWhiteSpace())
-            return false;
+            char next = s[contentStart];
 
-        // Accept: <a, </a, <!doctype, <!--
-        if (!(next.IsAsciiLetter() || HtmlTagStartChars.Contains(next)))
-            return false;
+            // Accept: <a, </a, <!doctype, <!--
+            if (!next.IsAsciiWhiteSpace() && (next.IsAsciiLetter() || HtmlTagStartChars.Contains(next)) && s[(contentStart + 1)..].Contains('>'))
+                return true;
 
-        int gt = s[(lt + 2)..].IndexOf('>');
-        return gt >= 0;
+            searchFrom = contentStart;
+        }
+
+        return false;
     }
 
     /// <summary>
